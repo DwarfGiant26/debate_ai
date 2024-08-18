@@ -1,20 +1,20 @@
-import React from 'react';
+import React, {useState} from 'react';
 import './App.css';
 import defaultProfile from './default-avatar.jpg'
 import {Backend} from "./Backend"
 
-let backend: Backend = new Backend("localhost:8080");
+let backend: Backend = new Backend(" http://localhost:8000");
 
 function App() {
-    let transcript = "test transcript \n hello \n what";
+    const [transcript, setTranscript] = useState("");
     return (
         <div className="App">
             <div className="column-container">
                 <DebaterProfile/>
-                <Transcript content={transcript} lineSeparator={"\n"} />
+                <Transcript content={transcript} lineSeparator={"---"} />
                 <DebaterProfile/>
             </div>
-            <StartDebateButton/>
+            <StartDebateButton setTranscript={setTranscript}/>
         </div>
     );
 }
@@ -25,9 +25,12 @@ function Transcript({content, lineSeparator}:{content: string, lineSeparator: st
     const rows = []
 
     for (let i = 0; i < lines.length; i++) {
+        let temp: string[] = lines[i].split(":");
+        let message: string = temp.slice(1, temp.length).join("");
+
         rows.push(
             <div className= {isLeft ? "message left": "message right"} key={i}>
-                <p>{lines[i]}</p>
+                <p>{message}</p>
             </div>
         )
         isLeft = !isLeft
@@ -47,13 +50,16 @@ function DebaterProfile(){
     );
 }
 
-function StartDebateButton(){
+function StartDebateButton({setTranscript}: {setTranscript: Function}){
+    async function updateTranscript(){
+        setTranscript(await backend.startDebate());
+    }
     return (
         <button
             className={"start-debate-button"}
             key={0}
             title={"Start Debate"}
-            onSubmit={backend.startDebate}>
+            onClick={() => updateTranscript()}>
             Start Debate
         </button>
     )
