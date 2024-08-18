@@ -1,0 +1,46 @@
+.App {
+  text-align: center;
+}
+
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  width: 300px;
+  background-color: #f4f4f4;
+  border-radius: 10px;
+  max-height: 60%;
+  overflow: scroll;
+}
+
+.message {
+  max-width: 70%;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 10px;
+  color: white;
+  font-size: 14px;
+}
+
+.left {
+  background-color: #007bff;
+  align-self: flex-start;
+}
+
+.right {
+  background-color: #28a745;
+  align-self: flex-end;
+}
+
+.column-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center; /* Center items horizontally */
+  justify-content: center; /* Center items vertically */
+  height: 80vh;
+}
+
+.start-debate-button {
+  height: 5vh;
+  width: 10vh;
+}
