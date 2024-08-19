@@ -1,3 +1,6 @@
+import {FileContent} from "use-file-picker/types";
+import {GetterT} from "./TypeHelper"
+
 export class Backend {
     private readonly backendUrl: string;
 
@@ -22,6 +25,44 @@ export class Backend {
             console.error('Failed to fetch:', error);
             throw error; // Re-throw error if you want to handle it further up the call stack
         }
+    }
+
+    async sendFiles(fileContents: string, isDebaterA: boolean){
+        const formData = new FormData();
+        // Append each file to the FormData object
+        console.log(fileContents);
+        // formData.append(`file_contents`, fileContents);
+        // formData.append('is_debater_a', isDebaterA ? "true": "false");
+        let fp: FilePayload = new FilePayload(fileContents, isDebaterA)
+
+        try {
+            const response = await fetch(this.backendUrl + "/input-files", {
+                method: 'POST',
+                body: JSON.stringify(fp),
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log('Success:', result);
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+}
+
+class FilePayload{
+    public file_contents: string;
+    public is_debater_a: boolean;
+
+    constructor(fileContent: string, isDebaterA: boolean) {
+        this.file_contents = fileContent;
+        this.is_debater_a = isDebaterA;
     }
 }
 

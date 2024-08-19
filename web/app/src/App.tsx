@@ -2,6 +2,9 @@ import React, {useState} from 'react';
 import './App.css';
 import defaultProfile from './default-avatar.jpg'
 import {Backend} from "./Backend"
+import { useFilePicker } from 'use-file-picker';
+import {FileContent} from "use-file-picker/types";
+import {GetterT} from "./TypeHelper"
 
 let backend: Backend = new Backend(" http://localhost:8000");
 
@@ -10,16 +13,41 @@ function App() {
     return (
         <div className="App">
             <div className="column-container">
-                <DebaterProfile/>
-                <Transcript content={transcript} lineSeparator={"---"} />
-                <DebaterProfile/>
+                <Debater isDebaterA={true}/>
+                <DebatePlatform transcript={transcript} setTranscript={setTranscript}/>
+                <Debater isDebaterA={false}/>
             </div>
-            <StartDebateButton setTranscript={setTranscript}/>
+        </div>
+            );
+}
+
+function DebatePlatform({transcript, setTranscript}: {transcript: string, setTranscript: React.Dispatch<any>}) {
+    return (
+        <div className="debate-platform">
+            <div className="upper-section">
+                <Transcript content={transcript} lineSeparator={"---"}/>
+            </div>
+            <div className="lower-section">
+                <StartDebateButton setTranscript={setTranscript}/>
+            </div>
         </div>
     );
 }
 
-function Transcript({content, lineSeparator}:{content: string, lineSeparator: string}) {
+function Debater({isDebaterA}: {isDebaterA: boolean}) {
+    return (
+        <div className="debater">
+            <div className="upper-section">
+                <DebaterProfile/>
+            </div>
+            <div className="lower-section">
+                <FilePicker isDebaterA={isDebaterA}/>
+            </div>
+        </div>
+    );
+}
+
+function Transcript({content, lineSeparator}: { content: string, lineSeparator: string }) {
     let lines: string[] = content.split(lineSeparator);
     let isLeft: boolean = true;
     const rows = []
@@ -29,7 +57,7 @@ function Transcript({content, lineSeparator}:{content: string, lineSeparator: st
         let message: string = temp.slice(1, temp.length).join("");
 
         rows.push(
-            <div className= {isLeft ? "message left": "message right"} key={i}>
+            <div className= {isLeft ? "message-left": "message-right"} key={i}>
                 <p>{message}</p>
             </div>
         )
@@ -44,8 +72,8 @@ function Transcript({content, lineSeparator}:{content: string, lineSeparator: st
 
 function DebaterProfile(){
     return (
-        <div className={"Debater"}>
-            <img src={defaultProfile} alt="profile image"></img>
+        <div className={"profile-img"}>
+            <img className="profile_img" src={defaultProfile} alt="profile image"></img>
         </div>
     );
 }
@@ -63,6 +91,50 @@ function StartDebateButton({setTranscript}: {setTranscript: Function}){
             Start Debate
         </button>
     )
+}
+
+function FilePicker({isDebaterA}: {isDebaterA: boolean}) {
+    const { openFilePicker, filesContent, loading } = useFilePicker({
+        accept: '.*',
+    });
+
+    if (loading) {
+        return <div>Loading...</div>;
+    }
+
+    let getFileNames: GetterT<string[]> = () => filesContent.map((file, index) => (
+            file.name
+        ));
+    function getFiles(): FileContent<any>[] {
+        if (filesContent.length == 0){
+            return [];
+        }
+        return filesContent;
+    }
+
+    return (
+        <div className="file-picker">
+            <button onClick={() => openFilePicker()}>Select files</button>
+            <br />
+            {getFileNames()}
+            <StartIndexButton getFiles={getFiles} isDebaterA={isDebaterA}/>
+        </div>
+    );
+}
+
+function StartIndexButton({getFiles, isDebaterA}: {getFiles: GetterT<FileContent<string>[]>, isDebaterA: boolean}){
+    function getFileContents(){
+        let contents: string = "";
+        getFiles().forEach((content) => {
+            contents += content.content + "\n";
+        });
+        return contents;
+    }
+    return (
+      <button onClick={() => backend.sendFiles(getFileContents(), isDebaterA)}>
+          Start Index
+      </button>
+    );
 }
 
 

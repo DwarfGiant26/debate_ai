@@ -39,13 +39,13 @@ async def start_debate():
 
 
 class InputFilesInfo(BaseModel):
+    file_contents: str
     is_debater_a: bool
-    files: Annotated[bytes, File()]
 
 
 @app.post("/input-files/")
 async def input_files(input_files_info: InputFilesInfo):
-    files: list[str] = [str(file) for file in input_files_info.files]
+    files: list[str] = [str(file) for file in input_files_info.file_contents]
     if input_files_info.is_debater_a:
         debater_a.set_input_files(files)
     else:

@@ -17,8 +17,6 @@ class LLM(ABC):
         """
         pass
 
-
-from llama_index.core import SimpleDirectoryReader
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core import SummaryIndex, VectorStoreIndex
 from llama_index.core.tools import QueryEngineTool
@@ -133,17 +131,3 @@ class Debater:
 
     def set_is_index_updated(self):
         self.is_index_updated = True
-
-    def is_input_files_change(self) -> bool:
-        """
-        Checks if the input filenames are changing. Doesn't check if the file content is different.
-        :return: Whether the input filenames are changing
-        """
-        if len(self.input_files) != len(self.last_input_files):
-            return False
-
-        for input_file in self.input_files:
-            if input_file not in self.last_input_files:
-                return False
-
-        return True

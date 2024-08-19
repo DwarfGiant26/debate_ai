@@ -1,6 +1,9 @@
+### Setup
+
+```
 pip install -r requirements.txt
-sudo snap install ollama
-ollama pull mxbai-embed-large
+npm i use-file-picker
+```
 
 ### Run Server
 
@@ -9,3 +12,11 @@ Simply run
 cd python-core
 fastapi dev server.py
 ```
+
+### Run client
+
+```
+cd web/app
+npm start
+```
+
