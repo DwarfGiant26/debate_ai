@@ -1,3 +1,2 @@
 llama-index
-llama-index-llms-ollama
-llama-index-embeddings-ollama
+fastapi[standard]

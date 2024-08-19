@@ -43,8 +43,9 @@ class Transcript:
     Include information about who says what happens during the debate
     """
 
-    def __init__(self):
+    def __init__(self, separator="---"):
         self.data = ""
+        self.separator = separator
 
     def write(self, debater: str, content: str) -> None:
-        self.data += f"{debater}: {content}" + "\n"
+        self.data += f"{debater}: {content}" + self.separator
