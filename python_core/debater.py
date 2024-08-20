@@ -2,7 +2,12 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import *
 from llama_index.core import Document
-
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core import SummaryIndex, VectorStoreIndex
+from llama_index.core.tools import QueryEngineTool
+from llama_index.core.query_engine.router_query_engine import RouterQueryEngine
+from llama_index.core.selectors import LLMSingleSelector
+import time
 
 class LLM(ABC):
     def __init__(self) -> None:
@@ -17,25 +22,17 @@ class LLM(ABC):
         """
         pass
 
-from llama_index.core.node_parser import SentenceSplitter
-from llama_index.core import SummaryIndex, VectorStoreIndex
-from llama_index.core.tools import QueryEngineTool
-from llama_index.core.query_engine.router_query_engine import RouterQueryEngine
-from llama_index.core.selectors import LLMSingleSelector
-
 
 class OpenAILLM(LLM):
-    def __init__(self, get_input_files: Callable[[], list[str]], is_input_files_change: Callable[[], bool],
-                 set_is_index_updated: Callable[[], None]):
+    def __init__(self, get_file_content: Callable[[], str]):
         from llama_index.core import Settings
         from llama_index.llms.openai import OpenAI
         from llama_index.embeddings.openai import OpenAIEmbedding
 
         super().__init__()
-        self.query_engine = self.get_engine()
-        self.get_input_files = get_input_files
-        self.is_input_files_change = is_input_files_change
-        self.set_is_index_updated = set_is_index_updated
+        self.get_file_content = get_file_content
+        self.is_index_updated = False
+        self.query_engine = None
 
         Settings.llm = OpenAI(model="gpt-3.5-turbo")
         Settings.embed_model = OpenAIEmbedding(model="text-embedding-ada-002")
@@ -48,20 +45,29 @@ class OpenAILLM(LLM):
 
         :return:
         """
-        if not self.is_input_files_change():
+        if self.is_index_updated:
+            print("index is updated")
             return self.query_engine
 
-        documents = [Document(text=t) for t in self.get_input_files()]
+        print(f"input text: {self.get_file_content()}")
+
+        time_start = time.time()
+
+        documents = [Document(text=t) for t in self.get_file_content()]
         splitter = SentenceSplitter(chunk_size=1024)
         nodes = splitter.get_nodes_from_documents(documents)
         summary_index = SummaryIndex(nodes)
         vector_index = VectorStoreIndex(nodes)
+
+        print(f"Finish building nodes and indices in {time.time() - time_start} seconds.")
 
         summary_query_engine = summary_index.as_query_engine(
             response_mode="tree_summarize",
             use_async=True,
         )
         vector_query_engine = vector_index.as_query_engine()
+
+        print(f"Finish building query engines in {time.time() - time_start} seconds.")
 
         summary_tool = QueryEngineTool.from_defaults(
             query_engine=summary_query_engine,
@@ -86,7 +92,9 @@ class OpenAILLM(LLM):
             verbose=True
         )
 
-        self.set_is_index_updated()
+        print(f"Finish building router query engine in {time.time() - time_start} seconds.")
+
+        self.is_index_updated = True
 
         return self.query_engine
 
@@ -111,14 +119,12 @@ class Debater:
         self.name = name
         self.llm = llm
         self.input_files = []
-        self.last_input_files = set()
-        self.is_index_updated = True
 
     def set_llm(self, llm_type: LLMType):
         if llm_type == LLMType.STUB:
             self.llm = StubLLM()
         elif llm_type == LLMType.OPENAI:
-            self.llm = OpenAILLM(lambda: self.input_files, lambda: self.is_index_updated, self.set_is_index_updated)
+            self.llm = OpenAILLM(lambda: self.input_files)
 
     def get_name(self) -> str:
         return self.name
@@ -126,8 +132,6 @@ class Debater:
     def send(self, message: str) -> str:
         return self.llm.send(message)
 
-    def set_input_files(self, input_files: list[str]):
+    def set_file_contents(self, input_files: str):
         self.input_files = input_files
-
-    def set_is_index_updated(self):
-        self.is_index_updated = True
+        self.llm.is_index_updated = False

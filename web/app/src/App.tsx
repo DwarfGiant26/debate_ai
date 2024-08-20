@@ -28,7 +28,7 @@ function DebatePlatform({transcript, setTranscript}: {transcript: string, setTra
                 <Transcript content={transcript} lineSeparator={"---"}/>
             </div>
             <div className="lower-section">
-                <StartDebateButton setTranscript={setTranscript}/>
+                <DebateAction setTranscript={setTranscript}/>
             </div>
         </div>
     );
@@ -78,9 +78,52 @@ function DebaterProfile(){
     );
 }
 
-function StartDebateButton({setTranscript}: {setTranscript: Function}){
+export class DebateInfo{
+    getStartingPrompt: GetterT<string>;
+    setStartingPrompt: React.Dispatch<React.SetStateAction<string>>;
+
+    constructor(getStartingPrompt: GetterT<string>, setStartingPrompt: React.Dispatch<React.SetStateAction<string>>) {
+        this.setStartingPrompt = setStartingPrompt;
+        this.getStartingPrompt = getStartingPrompt;
+    }
+}
+
+function DebateAction({setTranscript}: {setTranscript: Function}){
+    const [startingPrompt, setStartingPrompt] = useState<string>("");
+    let debateInfo: DebateInfo = new DebateInfo(() => startingPrompt, setStartingPrompt);
+
+    return (
+        <div>
+            <DebatePrompt getPrompt={debateInfo.getStartingPrompt} setPrompt={debateInfo.setStartingPrompt}/>
+            <StartDebateButton setTranscript={setTranscript} getDebateInfo={() => debateInfo}/>
+        </div>
+    );
+}
+
+function DebatePrompt({getPrompt, setPrompt}: {getPrompt: GetterT<string>, setPrompt: Function}){
+    const handlePromptChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setPrompt(event.target.value);
+    };
+
+    return (
+        <div>
+            Write a starting topic/question for debate below:
+            <input
+                className="starting-prompt"
+                type="text"
+                value={getPrompt()}
+                onChange={handlePromptChange}
+            />
+        </div>
+    );
+}
+
+function StartDebateButton({setTranscript, getDebateInfo}: {
+    setTranscript: Function,
+    getDebateInfo: GetterT<DebateInfo>
+}) {
     async function updateTranscript(){
-        setTranscript(await backend.startDebate());
+        setTranscript(await backend.startDebate(getDebateInfo()));
     }
     return (
         <button

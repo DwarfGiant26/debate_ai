@@ -1,5 +1,4 @@
-import {FileContent} from "use-file-picker/types";
-import {GetterT} from "./TypeHelper"
+import {DebateInfo} from "./App"
 
 export class Backend {
     private readonly backendUrl: string;
@@ -8,10 +7,21 @@ export class Backend {
         this.backendUrl = backendUrl;
     }
 
-    async startDebate()  {
+
+    async startDebate(debateInfo: DebateInfo)  {
         let endpoint: string = this.backendUrl + "/start-debate"
         try {
-            const response = await fetch(endpoint);
+            const response = await fetch(
+                endpoint,
+                {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        "topic": debateInfo.getStartingPrompt()
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -28,11 +38,8 @@ export class Backend {
     }
 
     async sendFiles(fileContents: string, isDebaterA: boolean){
-        const formData = new FormData();
         // Append each file to the FormData object
         console.log(fileContents);
-        // formData.append(`file_contents`, fileContents);
-        // formData.append('is_debater_a', isDebaterA ? "true": "false");
         let fp: FilePayload = new FilePayload(fileContents, isDebaterA)
 
         try {
