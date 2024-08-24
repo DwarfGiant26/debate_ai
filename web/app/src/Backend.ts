@@ -1,4 +1,6 @@
 import {DebateInfo} from "./App"
+import {RoleInfo} from "./App";
+import {FilePayload} from "./App";
 
 export class Backend {
     private readonly backendUrl: string;
@@ -6,7 +8,6 @@ export class Backend {
     constructor(backendUrl: string) {
         this.backendUrl = backendUrl;
     }
-
 
     async startDebate(debateInfo: DebateInfo)  {
         let endpoint: string = this.backendUrl + "/start-debate"
@@ -37,6 +38,29 @@ export class Backend {
         }
     }
 
+    async submitRole(roleInfo: RoleInfo){
+        let endpoint: string = this.backendUrl + "/submit-role";
+        try {
+            const response = await fetch(
+                endpoint,
+                {
+                    method: 'POST',
+                    body: JSON.stringify(roleInfo),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return;
+        } catch (error) {
+            console.error('Failed to fetch:', error);
+            throw error; // Re-throw error if you want to handle it further up the call stack
+        }
+    }
+
     async sendFiles(fileContents: string, isDebaterA: boolean){
         // Append each file to the FormData object
         console.log(fileContents);
@@ -60,16 +84,6 @@ export class Backend {
         } catch (error) {
             console.error('Error:', error);
         }
-    }
-}
-
-class FilePayload{
-    public file_contents: string;
-    public is_debater_a: boolean;
-
-    constructor(fileContent: string, isDebaterA: boolean) {
-        this.file_contents = fileContent;
-        this.is_debater_a = isDebaterA;
     }
 }
 

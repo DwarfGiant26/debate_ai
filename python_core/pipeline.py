@@ -17,19 +17,19 @@ class DebatePipeline:
             return
 
         current_debater = self.debater_a
-        response = self.debater_a.send(DebatePipeline.get_starting_input(starting_prompt))
-        self.transcript.write(current_debater.get_name(), response)
+        response: str = ""
 
-        response = self.debater_b.send(DebatePipeline.get_starting_input(starting_prompt
-                                                                         + DebatePipeline.get_non_starting_input(response)))
-        self.transcript.write(current_debater.get_name(), response)
+        for i in range(self.max_iter):
+            # Add starting context for both player in first prompt to each of them
+            to_send = DebatePipeline.get_starting_input(starting_prompt) if i <= 1 else ""
+            if i >= 1:
+                to_send += DebatePipeline.get_non_starting_input(response)
 
-        for _ in range(self.max_iter-2):
-            current_debater = self.__switch_debater(current_debater)
-            print(response)
             time.sleep(self.delay_seconds)
-            response = current_debater.send(response)
+            response = current_debater.send(to_send)
             self.transcript.write(current_debater.get_name(), response)
+
+            current_debater = self.__switch_debater(current_debater)
 
     def __switch_debater(self, current_debater: Debater) -> Debater:
         if current_debater == self.debater_a:
@@ -40,7 +40,7 @@ class DebatePipeline:
         return f"The topic for debate is {prompt}\n\n"
 
     def get_non_starting_input(prompt: str) -> str:
-        return f"the other person says {prompt}\n\n"
+        return f"{prompt}\n\n"
 
 
 class Transcript:

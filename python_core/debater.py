@@ -33,8 +33,9 @@ class OpenAILLM(LLM):
         self.get_file_content = get_file_content
         self.is_index_updated = False
         self.query_engine = None
+        self.llm = OpenAI(model="gpt-3.5-turbo")
 
-        Settings.llm = OpenAI(model="gpt-3.5-turbo")
+        Settings.llm = self.llm
         Settings.embed_model = OpenAIEmbedding(model="text-embedding-ada-002")
 
     def get_engine(self) -> RouterQueryEngine:
@@ -99,6 +100,15 @@ class OpenAILLM(LLM):
         return self.query_engine
 
     def send(self, message: str) -> str:
+        """
+        Send a message to the llm.
+        If files are provided, query will be sent to query engine that indexed the file first.
+        :param message:
+        :return: response from llm
+        """
+        if len(self.get_file_content()) == 0:
+            return self.llm.complete(message).text
+
         return self.get_engine().query(message).response
 
 
@@ -119,12 +129,31 @@ class Debater:
         self.name = name
         self.llm = llm
         self.input_files = []
+        self.role: str = None
 
     def set_llm(self, llm_type: LLMType):
         if llm_type == LLMType.STUB:
             self.llm = StubLLM()
         elif llm_type == LLMType.OPENAI:
             self.llm = OpenAILLM(lambda: self.input_files)
+
+    def set_role(self, role: str):
+        self.role = role
+        self.specify_role_to_llm()
+
+    def specify_role_to_llm(self):
+        if self.role is None or self.role == "":
+            return
+
+        to_send: str = f"""
+         Hey I want you to act as a really good debater. 
+         You need to fully believe what you say.
+         Don't back down on any point. Keep fighting on it.
+         Your role this time is {self.role}. Really act like a {self.role}.   
+         Think of what kind of word choices will {self.role} use.
+        """
+        response = self.send(to_send)
+        print(f"{to_send}, response:{response}")
 
     def get_name(self) -> str:
         return self.name

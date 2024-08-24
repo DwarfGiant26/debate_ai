@@ -60,3 +60,17 @@ async def input_files(input_files_info: InputFilesInfo):
         debater_a.set_file_contents(input_files_info.file_contents)
     else:
         debater_b.set_file_contents(input_files_info.file_contents)
+
+
+class RoleInfo(BaseModel):
+    role: str
+    is_debater_a: bool
+
+
+@app.post("/submit-role/")
+async def submit_role(role_info: RoleInfo):
+    if role_info.is_debater_a:
+        debater_b.set_role(role_info.role)
+    else:
+        debater_b.set_role(role_info.role)
+    return

@@ -8,6 +8,26 @@ import {GetterT} from "./TypeHelper"
 
 let backend: Backend = new Backend(" http://localhost:8000");
 
+export class RoleInfo{
+    public role: string;
+    public is_debater_a: boolean;
+
+    constructor(role: string, isDebaterA: boolean) {
+        this.role = role;
+        this.is_debater_a = isDebaterA;
+    }
+}
+
+export class FilePayload{
+    public file_contents: string;
+    public is_debater_a: boolean;
+
+    constructor(fileContent: string, isDebaterA: boolean) {
+        this.file_contents = fileContent;
+        this.is_debater_a = isDebaterA;
+    }
+}
+
 function App() {
     const [transcript, setTranscript] = useState("");
     return (
@@ -38,7 +58,10 @@ function Debater({isDebaterA}: {isDebaterA: boolean}) {
     return (
         <div className="debater">
             <div className="upper-section">
-                <DebaterProfile/>
+                <div className="row-container">
+                        <DebaterProfile/>
+                        <Role isDebaterA={isDebaterA}/>
+                </div>
             </div>
             <div className="lower-section">
                 <FilePicker isDebaterA={isDebaterA}/>
@@ -136,6 +159,32 @@ function StartDebateButton({setTranscript, getDebateInfo}: {
     )
 }
 
+function Role({isDebaterA}: {isDebaterA: boolean}){
+    const [role, setRole] = useState<string>("");
+    const handleRoleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setRole(event.target.value);
+    };
+    return (
+        <div>
+            <input
+                className="role-input"
+                type="text"
+                value={role}
+                onChange={handleRoleChange}
+            />
+            <button
+                className="submit-role-button"
+                onClick={() => {
+                    let ri: RoleInfo = new RoleInfo(role, isDebaterA);
+                    return backend.submitRole(ri);
+                }
+            }>
+                Submit Role
+            </button>
+        </div>
+    );
+}
+
 function FilePicker({isDebaterA}: {isDebaterA: boolean}) {
     const { openFilePicker, filesContent, loading } = useFilePicker({
         accept: '.*',
@@ -179,7 +228,6 @@ function StartIndexButton({getFiles, isDebaterA}: {getFiles: GetterT<FileContent
       </button>
     );
 }
-
 
 
 export default App;
