@@ -12,7 +12,20 @@ class DebatePipeline:
         self.max_iter = max_iter
         self.transcript = Transcript()
 
-    def start(self, starting_prompt) -> None:
+    def run(self, starting_prompt: str = None) -> None:
+        """
+        Run the pipeline.
+        If starting prompt is not specified / None, then assume it is not beginning of debate and vice versa.
+        If this is beginning of debate, then transcript will be reset from empty.
+        Update the transcript with the back and forth responses from each llm.
+        :param starting_prompt:
+        :return: None
+        """
+        is_start = starting_prompt is None
+
+        # TODO: implement resume debate
+        if is_start:
+            self.transcript.reset()
         if self.max_iter < 1:
             return
 
@@ -30,6 +43,7 @@ class DebatePipeline:
             self.transcript.write(current_debater.get_name(), response)
 
             current_debater = self.__switch_debater(current_debater)
+
 
     def __switch_debater(self, current_debater: Debater) -> Debater:
         if current_debater == self.debater_a:
@@ -55,3 +69,6 @@ class Transcript:
 
     def write(self, debater: str, content: str) -> None:
         self.data += f"{debater}: {content}" + self.separator
+
+    def reset(self):
+        self.data = ""

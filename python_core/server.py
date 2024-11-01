@@ -74,3 +74,8 @@ async def submit_role(role_info: RoleInfo):
     else:
         debater_b.set_role(role_info.role)
     return
+
+
+@app.post("/resume-debate/")
+async def resume_debate():
+    pipeline.resume_debate()

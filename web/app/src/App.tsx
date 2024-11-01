@@ -118,7 +118,7 @@ function DebateAction({setTranscript}: {setTranscript: Function}){
     return (
         <div>
             <DebatePrompt getPrompt={debateInfo.getStartingPrompt} setPrompt={debateInfo.setStartingPrompt}/>
-            <StartDebateButton setTranscript={setTranscript} getDebateInfo={() => debateInfo}/>
+            <RunDebate setTranscript={setTranscript} getDebateInfo={() => debateInfo}/>
         </div>
     );
 }
@@ -141,25 +141,36 @@ function DebatePrompt({getPrompt, setPrompt}: {getPrompt: GetterT<string>, setPr
     );
 }
 
-function StartDebateButton({setTranscript, getDebateInfo}: {
+function RunDebate({setTranscript, getDebateInfo}: {
     setTranscript: Function,
     getDebateInfo: GetterT<DebateInfo>
 }) {
-    async function updateTranscript(){
-        setTranscript(await backend.startDebate(getDebateInfo()));
+    async function startDebate(){
+        setTranscript(await backend.runDebate(getDebateInfo(), true));
     }
+    async function resumeDebate(){
+        setTranscript(await backend.runDebate(getDebateInfo(), false));
+    }
+
     return (
-        <button
-            className={"start-debate-button"}
-            key={0}
-            title={"Start Debate"}
-            onClick={() => updateTranscript()}>
-            Start Debate
-        </button>
+        <div>
+            <button
+                className={"run-debate-button"}
+                title={"Start Debate"}
+                onClick={() => startDebate()}>
+                Start Debate
+            </button>
+            <button
+                className={"run-debate-button"}
+                title={"Resume Debate"}
+                onClick={() => resumeDebate()}>
+                Resume Debate
+            </button>
+        </div>
     )
 }
 
-function Role({isDebaterA}: {isDebaterA: boolean}){
+function Role({isDebaterA}: { isDebaterA: boolean }) {
     const [role, setRole] = useState<string>("");
     const handleRoleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setRole(event.target.value);
@@ -194,7 +205,7 @@ function FilePicker({isDebaterA}: {isDebaterA: boolean}) {
         return <div>Loading...</div>;
     }
 
-    let getFileNames: GetterT<string[]> = () => filesContent.map((file, index) => (
+    let getFileNames: GetterT<string[]> = () => filesContent.map((file) => (
             file.name
         ));
     function getFiles(): FileContent<any>[] {

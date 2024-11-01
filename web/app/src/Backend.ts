@@ -9,20 +9,26 @@ export class Backend {
         this.backendUrl = backendUrl;
     }
 
-    async startDebate(debateInfo: DebateInfo)  {
-        let endpoint: string = this.backendUrl + "/start-debate"
+    async runDebate(debateInfo: DebateInfo, isStart: boolean)  {
+        let endpoint: string = this.backendUrl + (isStart ? "/start-debate": "/resume-debate");
+
         try {
-            const response = await fetch(
-                endpoint,
-                {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        "topic": debateInfo.getStartingPrompt()
-                    }),
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
+            let response: Response;
+            if (isStart){
+                response = await fetch(
+                    endpoint,
+                    {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            "topic": debateInfo.getStartingPrompt()
+                        }),
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+            }else {
+                response = await fetch(endpoint);
+            }
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
