@@ -1,13 +1,11 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import *
-from llama_index.core import Document
-from llama_index.core.node_parser import SentenceSplitter
-from llama_index.core import SummaryIndex, VectorStoreIndex
-from llama_index.core.tools import QueryEngineTool
-from llama_index.core.query_engine.router_query_engine import RouterQueryEngine
-from llama_index.core.selectors import LLMSingleSelector
-import time
+
+from langchain.memory import ConversationTokenBufferMemory
+from langchain.chains import ConversationChain
+from langchain.chat_models import ChatOpenAI
+
 
 class LLM(ABC):
     def __init__(self) -> None:
@@ -24,80 +22,17 @@ class LLM(ABC):
 
 
 class OpenAILLM(LLM):
-    def __init__(self, get_file_content: Callable[[], str]):
-        from llama_index.core import Settings
-        from llama_index.llms.openai import OpenAI
-        from llama_index.embeddings.openai import OpenAIEmbedding
-
+    def __init__(self):
         super().__init__()
-        self.get_file_content = get_file_content
-        self.is_index_updated = False
-        self.query_engine = None
-        self.llm = OpenAI(model="gpt-3.5-turbo")
+        self.model = ChatOpenAI(temperature=0.0, model="gpt-3.5-turbo")
+        self.memory = ConversationTokenBufferMemory(llm=self.model, max_token_limit=50)
 
-        Settings.llm = self.llm
-        Settings.embed_model = OpenAIEmbedding(model="text-embedding-ada-002")
-
-    def get_engine(self) -> RouterQueryEngine:
-        """
-        Build query engine.
-        If input file change, build new query engine.
-        Otherwise, just return existing one.
-
-        :return:
-        """
-        if self.is_index_updated:
-            print("index is updated")
-            return self.query_engine
-
-        print(f"input text: {self.get_file_content()}")
-
-        time_start = time.time()
-
-        documents = [Document(text=t) for t in self.get_file_content()]
-        splitter = SentenceSplitter(chunk_size=1024)
-        nodes = splitter.get_nodes_from_documents(documents)
-        summary_index = SummaryIndex(nodes)
-        vector_index = VectorStoreIndex(nodes)
-
-        print(f"Finish building nodes and indices in {time.time() - time_start} seconds.")
-
-        summary_query_engine = summary_index.as_query_engine(
-            response_mode="tree_summarize",
-            use_async=True,
-        )
-        vector_query_engine = vector_index.as_query_engine()
-
-        print(f"Finish building query engines in {time.time() - time_start} seconds.")
-
-        summary_tool = QueryEngineTool.from_defaults(
-            query_engine=summary_query_engine,
-            description=(
-                "Useful for summarization questions"
-            ),
-        )
-
-        vector_tool = QueryEngineTool.from_defaults(
-            query_engine=vector_query_engine,
-            description=(
-                "Useful for retrieving specific context"
-            ),
-        )
-
-        self.query_engine = RouterQueryEngine(
-            selector=LLMSingleSelector.from_defaults(),
-            query_engine_tools=[
-                summary_tool,
-                vector_tool,
-            ],
+        self.conversation = ConversationChain(
+            llm=self.model,
+            memory=self.memory,
             verbose=True
         )
-
-        print(f"Finish building router query engine in {time.time() - time_start} seconds.")
-
-        self.is_index_updated = True
-
-        return self.query_engine
+        self.config = {"configurable": {"thread_id": "default"}}
 
     def send(self, message: str) -> str:
         """
@@ -106,10 +41,7 @@ class OpenAILLM(LLM):
         :param message:
         :return: response from llm
         """
-        if len(self.get_file_content()) == 0:
-            return self.llm.complete(message).text
-
-        return self.get_engine().query(message).response
+        return self.conversation.predict(input=message)
 
 
 class StubLLM(LLM):
@@ -135,7 +67,7 @@ class Debater:
         if llm_type == LLMType.STUB:
             self.llm = StubLLM()
         elif llm_type == LLMType.OPENAI:
-            self.llm = OpenAILLM(lambda: self.input_files)
+            self.llm = OpenAILLM()
 
     def set_role(self, role: str):
         self.role = role

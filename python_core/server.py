@@ -45,7 +45,7 @@ class DebateTopic(BaseModel):
 
 @app.post("/start-debate")
 async def start_debate(debate_topic: DebateTopic):
-    pipeline.start(debate_topic.topic)
+    pipeline.run(debate_topic.topic)
     return {"message": pipeline.transcript.data}
 
 
@@ -78,4 +78,5 @@ async def submit_role(role_info: RoleInfo):
 
 @app.post("/resume-debate/")
 async def resume_debate():
-    pipeline.resume_debate()
+    # pipeline.resume_debate()
+    return
