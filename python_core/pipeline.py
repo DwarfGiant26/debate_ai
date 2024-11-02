@@ -14,6 +14,7 @@ class DebatePipeline:
         self.max_iter = max_iter
         self.transcript = Transcript()
         self.current_debater = self.debater_a
+        self.last_response = ""
 
     def run(self, starting_prompt: str = None, num_iters: int = None) -> None:
         """
@@ -33,19 +34,20 @@ class DebatePipeline:
         if self.max_iter < 1:
             return
 
-        response: str = ""
         num_iters = min(num_iters, self.max_iter) if num_iters is not None else self.max_iter
 
         for i in range(num_iters):
             # Add starting context for both player in first prompt to each of them
-            to_send = DebatePipeline.get_starting_input(starting_prompt) if i <= 1 else ""
-            if i >= 1:
-                to_send += DebatePipeline.get_non_starting_input(response)
+            to_send = DebatePipeline.get_starting_input(starting_prompt) if i <= 1 and starting_prompt is not None else self.last_response
 
             time.sleep(self.delay_seconds)
-            response = self.current_debater.send(to_send)
-            self.transcript.write(self.current_debater.get_name(), response)
+            self.last_response = self.current_debater.send(to_send)
+            print(f"pure response: {self.last_response}")
+            self.transcript.write(self.current_debater.get_name(), self.last_response)
             self.__switch_debater()
+
+        print("---Debater A---", self.debater_a.llm.get_memory())
+        print("---Debater B---", self.debater_b.llm.get_memory())
 
     def resume_debate(self):
         self.run()
@@ -57,9 +59,6 @@ class DebatePipeline:
 
     def get_starting_input(prompt: str) -> str:
         return f"The topic for debate is {prompt}\n\n"
-
-    def get_non_starting_input(prompt: str) -> str:
-        return f"{prompt}\n\n"
 
 
 class Transcript:

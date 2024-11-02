@@ -20,28 +20,40 @@ class LLM(ABC):
         """
         pass
 
+    @abstractmethod
+    def get_memory(self) -> str:
+        """
+        Get history of the conversation that the LLM remember.
+        :return: history from the llm in string
+        """
+        pass
+
 
 class OpenAILLM(LLM):
     def __init__(self):
         super().__init__()
         self.model = ChatOpenAI(temperature=0.0, model="gpt-3.5-turbo")
-        self.memory = ConversationTokenBufferMemory(llm=self.model, max_token_limit=50)
+        self.memory = ConversationTokenBufferMemory(llm=self.model, max_token_limit=500)
 
         self.conversation = ConversationChain(
             llm=self.model,
             memory=self.memory,
             verbose=True
         )
-        self.config = {"configurable": {"thread_id": "default"}}
 
     def send(self, message: str) -> str:
         """
-        Send a message to the llm.
+        Send a message to the llm, and update the memory on the new input and the new llm response/
         If files are provided, query will be sent to query engine that indexed the file first.
         :param message:
         :return: response from llm
         """
-        return self.conversation.predict(input=message)
+
+        output = self.conversation.predict(input=message)
+        return output
+
+    def get_memory(self) -> str:
+        return self.memory.buffer
 
 
 class StubLLM(LLM):
@@ -49,6 +61,10 @@ class StubLLM(LLM):
 
     def send(self, message: str) -> str:
         return StubLLM.STUB_RESPONSE
+
+    def get_memory(self) -> str:
+        # TODO
+        return ""
 
 
 class LLMType(Enum):
