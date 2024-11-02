@@ -76,7 +76,7 @@ async def submit_role(role_info: RoleInfo):
     return
 
 
-@app.post("/resume-debate/")
+@app.get("/resume-debate")
 async def resume_debate():
-    # pipeline.resume_debate()
-    return
+    pipeline.resume_debate()
+    return {"message": pipeline.transcript.data}

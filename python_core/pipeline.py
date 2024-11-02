@@ -13,14 +13,16 @@ class DebatePipeline:
         self.debater_b = debater_b
         self.max_iter = max_iter
         self.transcript = Transcript()
+        self.current_debater = self.debater_a
 
-    def run(self, starting_prompt: str = None) -> None:
+    def run(self, starting_prompt: str = None, num_iters: int = None) -> None:
         """
         Run the pipeline.
         If starting prompt is not specified / None, then assume it is not beginning of debate and vice versa.
         If this is beginning of debate, then transcript will be reset from empty.
         Update the transcript with the back and forth responses from each llm.
         :param starting_prompt:
+        :param num_iters:
         :return: None
         """
         is_start = starting_prompt is None
@@ -31,26 +33,27 @@ class DebatePipeline:
         if self.max_iter < 1:
             return
 
-        current_debater = self.debater_a
         response: str = ""
+        num_iters = min(num_iters, self.max_iter) if num_iters is not None else self.max_iter
 
-        for i in range(self.max_iter):
+        for i in range(num_iters):
             # Add starting context for both player in first prompt to each of them
             to_send = DebatePipeline.get_starting_input(starting_prompt) if i <= 1 else ""
             if i >= 1:
                 to_send += DebatePipeline.get_non_starting_input(response)
 
             time.sleep(self.delay_seconds)
-            response = current_debater.send(to_send)
-            self.transcript.write(current_debater.get_name(), response)
+            response = self.current_debater.send(to_send)
+            self.transcript.write(self.current_debater.get_name(), response)
+            self.__switch_debater()
 
-            current_debater = self.__switch_debater(current_debater)
+    def resume_debate(self):
+        self.run()
 
-
-    def __switch_debater(self, current_debater: Debater) -> Debater:
-        if current_debater == self.debater_a:
-            return self.debater_b
-        return self.debater_a
+    def __switch_debater(self) -> None:
+        if self.current_debater == self.debater_a:
+            self.current_debater = self.debater_b
+        self.current_debater = self.debater_a
 
     def get_starting_input(prompt: str) -> str:
         return f"The topic for debate is {prompt}\n\n"
