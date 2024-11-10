@@ -2,8 +2,6 @@ import React, {useState} from 'react';
 import './App.css';
 import defaultProfile from './default-avatar.jpg'
 import {Backend} from "./Backend"
-import { useFilePicker } from 'use-file-picker';
-import {FileContent} from "use-file-picker/types";
 import {GetterT} from "./TypeHelper"
 
 let backend: Backend = new Backend(" http://localhost:8000");
@@ -62,9 +60,6 @@ function Debater({isDebaterA}: {isDebaterA: boolean}) {
                         <DebaterProfile/>
                         <Role isDebaterA={isDebaterA}/>
                 </div>
-            </div>
-            <div className="lower-section">
-                <FilePicker isDebaterA={isDebaterA}/>
             </div>
         </div>
     );
@@ -193,50 +188,6 @@ function Role({isDebaterA}: { isDebaterA: boolean }) {
                 Submit Role
             </button>
         </div>
-    );
-}
-
-function FilePicker({isDebaterA}: {isDebaterA: boolean}) {
-    const { openFilePicker, filesContent, loading } = useFilePicker({
-        accept: '.*',
-    });
-
-    if (loading) {
-        return <div>Loading...</div>;
-    }
-
-    let getFileNames: GetterT<string[]> = () => filesContent.map((file) => (
-            file.name
-        ));
-    function getFiles(): FileContent<any>[] {
-        if (filesContent.length == 0){
-            return [];
-        }
-        return filesContent;
-    }
-
-    return (
-        <div className="file-picker">
-            <button onClick={() => openFilePicker()}>Select files</button>
-            <br />
-            {getFileNames()}
-            <StartIndexButton getFiles={getFiles} isDebaterA={isDebaterA}/>
-        </div>
-    );
-}
-
-function StartIndexButton({getFiles, isDebaterA}: {getFiles: GetterT<FileContent<string>[]>, isDebaterA: boolean}){
-    function getFileContents(){
-        let contents: string = "";
-        getFiles().forEach((content) => {
-            contents += content.content + "\n";
-        });
-        return contents;
-    }
-    return (
-      <button onClick={() => backend.sendFiles(getFileContents(), isDebaterA)}>
-          Start Index
-      </button>
     );
 }
 
