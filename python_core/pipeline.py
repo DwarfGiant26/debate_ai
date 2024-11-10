@@ -26,7 +26,7 @@ class DebatePipeline:
         :param num_iters:
         :return: None
         """
-        is_start = starting_prompt is None
+        is_start = starting_prompt is not None
 
         # TODO: implement resume debate
         if is_start:
@@ -50,6 +50,7 @@ class DebatePipeline:
         print("---Debater B---", self.debater_b.llm.get_memory())
 
     def resume_debate(self):
+        print("resume debate")
         self.run()
 
     def __switch_debater(self) -> None:
